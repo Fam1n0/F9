@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>9 Circular Fractal Spin</title>
+    <style>
+        body { margin: 0; overflow: hidden; background-color: #1a1a1a; }
+        canvas { display: block; }
+    </style>
+</head>
+<body>
+    <canvas></canvas>
+
+    <script>
+        const canvas = document.querySelector('canvas');
+        const ctx = canvas.getContext('2d');
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+
+        const queue = [];
+        const sliceCount = 8;
+        const angleBetweenSlices = 2 * Math.PI / sliceCount;
+        const minSize = 10;
+        const maxSize = 100;
+        let growing = true;
+        let spinAngle = 0;
+
+        // Function to get a color based on the size of the "9"
+        function getColorForSize(size) {
+            if (size > maxSize * 0.8) return '#FF0000';     // Red for large sizes
+            if (size > maxSize * 0.6) return '#FF7F00';     // Orange
+            if (size > maxSize * 0.4) return '#FFFF00';     // Yellow
+            if (size > maxSize * 0.2) return '#7FFF00';     // Green
+            return '#00FF00';                               // Light Green for small sizes
+        }
+
+        function drawNine(x, y, size, angle = 0) {
+            ctx.fillStyle = getColorForSize(size);
+
+            ctx.save();
+            ctx.translate(x, y);
+            ctx.rotate(angle);
+            ctx.font = `${size}px Arial`;
+            ctx.fillText('9', 0, 0);
+            ctx.restore();
+
+            if (growing ? size < maxSize : size > minSize) {
+                const newSize = growing ? size * 1.2 : size * 0.6;
+                const xOffset = size / 2.5;
+                const yOffset = newSize / 1.5;
+
+                const newX = x + xOffset * Math.cos(angle) - yOffset * Math.sin(angle);
+                const newY = y + xOffset * Math.sin(angle) + yOffset * Math.cos(angle);
+
+                queue.push(() => drawNine(newX, newY, newSize, angle));
+
+                const newX2 = x + newSize / 2.5 * Math.cos(angle) + newSize / 1.5 * Math.sin(angle);
+                const newY2 = y + newSize / 2.5 * Math.sin(angle) - newSize / 1.5 * Math.cos(angle);
+
+                queue.push(() => drawNine(newX2, newY2, newSize, angle));
+            } else if (size >= maxSize) {
+                growing = false;
+            } else if (size <= minSize) {
+                growing = true;
+            }
+        }
+
+        function animate() {
+            // Apply the rotation transformation for spinning the whole canvas content
+            ctx.save();
+            ctx.translate(canvas.width / 2, canvas.height / 2);
+            ctx.rotate(spinAngle);
+            ctx.translate(-canvas.width / 2, -canvas.height / 2);
+
+            if (queue.length) {
+                const drawNext = queue.shift();
+                drawNext();
+            } else {
+                for (let i = 0; i < sliceCount; i++) {
+                    drawNine(canvas.width / 3, canvas.height / 2, 100, angleBetweenSlices * i);
+                }
+            }
+
+            ctx.restore();
+
+            // Increment spinAngle to continue the spinning effect
+            spinAngle += 0.005;
+
+            requestAnimationFrame(animate);
+        }
+
+        animate();
+    </script>
+</body>
+</html>
